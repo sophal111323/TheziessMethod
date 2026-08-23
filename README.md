@@ -161,7 +161,7 @@ administrators inspect website users from Telegram.
 - `/users [page]` — registered users ordered by latest login
 - `/user <telegram_id|@username>` — full user details
 - `/subscriptions` — active PRO, PREMIUM and MAX plans
-- `/trials` — active FREE 3-day trials
+- `/trials` — active FREE 1-day trials
 - `/payments` — recent payment records
 - `/id` — show your own Telegram ID
 

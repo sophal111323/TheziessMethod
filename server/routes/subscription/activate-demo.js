@@ -124,7 +124,7 @@ export default async function handler(req, res) {
     ) {
       return res.status(409).json({
         error:
-          "The 3-day free trial has already been used for this Telegram account.",
+          "The 1-day free trial has already been used for this Telegram account.",
         code: "FREE_TRIAL_USED",
       });
     }

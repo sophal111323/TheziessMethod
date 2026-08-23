@@ -402,7 +402,7 @@ async function sendGrantHelp(chatId) {
       "<code>/grant @username pro</code>",
       "",
       "<b>Plan durations</b>",
-      "FREE: 3 days · max 3 videos/day",
+      "FREE: 1 day · max 3 videos/day",
       "PRO: 30 days",
       "PREMIUM: 180 days",
       "MAX: 1 year (365 days)",
@@ -485,7 +485,7 @@ async function grantPlanToUser(chatId, lookup, planId, adminTelegramId) {
         `User notification: <b>${userNotified ? "Sent" : "Not delivered"}</b>`,
         "",
         normalizedPlan === "free"
-          ? "FREE access is active for 3 days with the 3-videos-per-day quota."
+          ? "FREE access is active for 1 day with the 3-videos-per-day quota."
           : "The user should reopen the website or refresh it to load the new subscription.",
       ].join("\n"),
       {
@@ -596,7 +596,7 @@ async function sendSubscriptions(chatId) {
 async function sendTrials(chatId) {
   const { listAdminActiveTrials } = await getDatabaseModule();
   const trials = await listAdminActiveTrials(15);
-  const lines = ["<b>🆓 Active 3-Day Trials</b>", ""];
+  const lines = ["<b>🆓 Active 1-Day Trials</b>", ""];
 
   if (!trials.length) {
     lines.push("No active free trials.");

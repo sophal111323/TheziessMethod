@@ -29,10 +29,20 @@ CREATE TABLE IF NOT EXISTS theziess_free_trials_v5 (
   user_key TEXT UNIQUE NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'active',
   starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '3 days'),
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '1 day'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Keep existing installations aligned with the current one-day FREE plan.
+ALTER TABLE theziess_free_trials_v5
+  ALTER COLUMN expires_at SET DEFAULT (NOW() + INTERVAL '1 day');
+
+UPDATE theziess_free_trials_v5
+SET
+  expires_at = starts_at + INTERVAL '1 day',
+  updated_at = NOW()
+WHERE expires_at > starts_at + INTERVAL '1 day';
 
 CREATE TABLE IF NOT EXISTS theziess_payments_v5 (
   id BIGSERIAL PRIMARY KEY,

@@ -38,6 +38,7 @@ const DAILY_COMPRESSION_USAGE_TABLE = "theziess_daily_compression_usage_v1";
 const TIKTOK_CONNECTIONS_TABLE = "theziess_tiktok_connections_v1";
 const TIKTOK_UPLOADS_TABLE = "theziess_tiktok_uploads_v1";
 const MAINTENANCE_TABLE = "theziess_maintenance_state_v1";
+const FREE_TRIAL_DURATION_DAYS = 1;
 
 export const DEFAULT_MAINTENANCE_MESSAGE =
   "We are improving TheZiess Method. Please check back shortly.";
@@ -45,6 +46,7 @@ export const DEFAULT_MAINTENANCE_MESSAGE =
 let schemaPromise;
 let userMigrationPromise;
 let paidPlanMigrationPromise;
+let freeTrialDurationMigrationPromise;
 
 /**
  * Copy legacy users into the versioned table when possible. The old `users`
@@ -166,6 +168,34 @@ async function migratePaidPlanDurationsSafely() {
 }
 
 /**
+ * Shorten legacy FREE trials that were created with the previous three-day
+ * duration. The migration never extends a shorter custom expiry and must not
+ * prevent Telegram login if the database is temporarily unavailable.
+ */
+async function migrateFreeTrialDurationSafely() {
+  if (!freeTrialDurationMigrationPromise) {
+    freeTrialDurationMigrationPromise = pool
+      .query(`
+        UPDATE ${FREE_TRIALS_TABLE}
+        SET
+          expires_at = starts_at + INTERVAL '${FREE_TRIAL_DURATION_DAYS} day',
+          updated_at = NOW()
+        WHERE expires_at > starts_at + INTERVAL '${FREE_TRIAL_DURATION_DAYS} day'
+      `)
+      .then(() => true)
+      .catch((error) => {
+        console.warn("FREE trial duration migration skipped:", {
+          code: error?.code || "UNKNOWN",
+          message: error?.message || String(error),
+        });
+        return false;
+      });
+  }
+
+  return freeTrialDurationMigrationPromise;
+}
+
+/**
  * Versioned subscription tables deliberately avoid old Neon tables whose
  * columns/types may differ. PostgreSQL 42703 means an old table is missing a
  * column referenced by the application. Using new versioned tables makes the
@@ -208,7 +238,7 @@ export async function ensureSchema() {
           user_key TEXT UNIQUE NOT NULL,
           status VARCHAR(20) NOT NULL DEFAULT 'active',
           starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '3 days'),
+          expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '${FREE_TRIAL_DURATION_DAYS} day'),
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
@@ -347,6 +377,9 @@ export async function ensureSchema() {
 
       // Never let a legacy paid-plan migration prevent Telegram login.
       await migratePaidPlanDurationsSafely();
+
+      // Existing three-day FREE trials are reduced to the current one-day duration.
+      await migrateFreeTrialDurationSafely();
     })().catch((error) => {
       schemaPromise = null;
       throw error;
@@ -574,7 +607,7 @@ function isActiveTrialRow(trial) {
 
 function freeTrialUsedError() {
   const error = new Error(
-    "The 3-day free trial has already been used for this Telegram account.",
+    "The 1-day free trial has already been used for this Telegram account.",
   );
   error.code = "FREE_TRIAL_USED";
   return error;
@@ -642,7 +675,7 @@ async function activateFreeTrial(client, userId) {
           $1::TEXT,
           'active',
           NOW(),
-          NOW() + INTERVAL '3 days',
+          NOW() + INTERVAL '${FREE_TRIAL_DURATION_DAYS} day',
           NOW()
         )
         RETURNING *
@@ -711,7 +744,7 @@ export async function activateSubscription({
   await ensureSchema();
 
   const plans = {
-    free: { amount: 0, days: 3 },
+    free: { amount: 0, days: FREE_TRIAL_DURATION_DAYS },
     pro: { amount: 2, days: 30 },
     premium: { amount: 5, days: 180 },
     max: { amount: 10, days: 365 },
@@ -1397,14 +1430,14 @@ export async function setAdminFreePlan({ lookup, adminTelegramId }) {
           $1::TEXT,
           'active',
           NOW(),
-          NOW() + INTERVAL '3 days',
+          NOW() + INTERVAL '${FREE_TRIAL_DURATION_DAYS} day',
           NOW()
         )
         ON CONFLICT (user_key)
         DO UPDATE SET
           status = 'active',
           starts_at = NOW(),
-          expires_at = NOW() + INTERVAL '3 days',
+          expires_at = NOW() + INTERVAL '${FREE_TRIAL_DURATION_DAYS} day',
           updated_at = NOW()
         RETURNING *
       `,

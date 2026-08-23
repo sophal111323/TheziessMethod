@@ -408,7 +408,7 @@ let activeTikTokPublishId = null;
 let tiktokUploadPreviewUrl = null;
 
 const PLANS = {
-    free: { id: "free", name: "FREE", price: "$0", durationLabel: "3 days", days: 3, adminOnly: false },
+    free: { id: "free", name: "FREE", price: "$0", durationLabel: "1 day", days: 1, adminOnly: false },
     pro: { id: "pro", name: "PRO", price: "$2", durationLabel: "30 days", days: 30, adminOnly: true },
     premium: { id: "premium", name: "PREMIUM", price: "$5", durationLabel: "180 days", days: 180, adminOnly: true },
     max: { id: "max", name: "MAX", price: "$10", durationLabel: "1 year", days: 365, adminOnly: true },
@@ -551,7 +551,7 @@ function updateTelegramProfileUI(loggedIn, active) {
         setElementText(
             "profilePlanDescription",
             isFreeTrial
-                ? `Your one-time 3-day free trial is active.${freeQuotaText}`
+                ? `Your one-time 1-day free trial is active.${freeQuotaText}`
                 : `${plan.name} is active with unlimited compression/patching. Payment method: ${currentSubscription.paymentMethod || "KHQR"}.`,
         );
         profilePlanBadge?.classList.toggle("premium", !isFreeTrial);
@@ -563,7 +563,7 @@ function updateTelegramProfileUI(loggedIn, active) {
         setElementText("profilePlanExpiry", "—");
         setElementText(
             "profilePlanDescription",
-            "Start the FREE 3-day trial yourself. PRO, PREMIUM, and MAX must be assigned by an administrator.",
+            "Start the FREE 1-day trial yourself. PRO, PREMIUM, and MAX must be assigned by an administrator.",
         );
         profilePlanBadge?.classList.remove("premium", "trial");
     } else {
@@ -619,7 +619,7 @@ function configurePlanActivationModal(plan) {
 
     setElementText(
         "paymentModalTitle",
-        isFreeTrial ? "Activate 3-Day Free Trial" : "Admin Activation Required",
+        isFreeTrial ? "Activate 1-Day Free Trial" : "Admin Activation Required",
     );
     setElementText("paymentAmount", plan?.price || "$0");
     setElementText("paymentPlanName", plan?.name || "—");
@@ -631,13 +631,13 @@ function configurePlanActivationModal(plan) {
     if (paymentNotice) {
         paymentNotice.classList.remove("error");
         paymentNotice.textContent = isFreeTrial
-            ? "This free trial can be activated once per Telegram account. It includes 3 video patches per day, resetting at midnight Cambodia time. The 3-day period starts immediately after confirmation."
+            ? "This free trial can be activated once per Telegram account. It includes 3 video patches per day, resetting at midnight Cambodia time. The 1-day period starts immediately after confirmation."
             : `${plan?.name || "This paid plan"} cannot be claimed for free. Only an administrator can assign it through the Telegram bot. Your Telegram ID is ${currentUser?.id || "unknown"}.`;
     }
     if (confirmButton) {
         confirmButton.dataset.activationMode = isFreeTrial ? "free" : "admin-only";
         confirmButton.textContent = isFreeTrial
-            ? "Start 3-Day Free Trial"
+            ? "Start 1-Day Free Trial"
             : "Check Subscription";
     }
 }
@@ -772,7 +772,7 @@ function requireActiveSubscription({ focusPlans = true } = {}) {
     if (hasActiveSubscription()) return true;
 
     logMessage(
-        "Start the FREE 3-day trial or ask an administrator to assign PRO, PREMIUM, or MAX before compressing videos.",
+        "Start the FREE 1-day trial or ask an administrator to assign PRO, PREMIUM, or MAX before compressing videos.",
         "warning",
     );
 
@@ -1024,7 +1024,7 @@ async function initializeMembership() {
 
         if (paymentNotice) {
             paymentNotice.classList.remove("error");
-            paymentNotice.textContent = "Activating your 3-day free trial. Please wait…";
+            paymentNotice.textContent = "Activating your 1-day free trial. Please wait…";
         }
 
         try {
@@ -1061,7 +1061,7 @@ async function initializeMembership() {
             updateAccessUI();
             closeModal("paymentModal");
             hideSubscriptionPlans();
-            logMessage("Your 3-day free trial is active with 3 video patches per day.", "success");
+            logMessage("Your 1-day free trial is active with 3 video patches per day.", "success");
 
             await loadServerSession({
                 retries: 3,
@@ -1081,7 +1081,7 @@ async function initializeMembership() {
                 closeModal("paymentModal");
                 hideSubscriptionPlans();
                 updateAccessUI();
-                logMessage("Your 3-day free trial is active with 3 video patches per day.", "success");
+                logMessage("Your 1-day free trial is active with 3 video patches per day.", "success");
                 return;
             }
 
@@ -3011,7 +3011,7 @@ function updatePatchButton() {
         if (label) label.textContent = "Login Required";
         if (hint) {
             hint.hidden = false;
-            hint.textContent = "Login with Telegram, then choose the FREE 3-day trial or a paid plan.";
+            hint.textContent = "Login with Telegram, then choose the FREE 1-day trial or a paid plan.";
             hint.dataset.action = "login";
             hint.setAttribute("aria-expanded", "false");
             hideSubscriptionPlans();
