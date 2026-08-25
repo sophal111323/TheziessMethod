@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "generate-changelog": "node scripts/generate-changelog.mjs",
+    "predev": "npm run generate-changelog",
     "dev": "vite",
     "build": "npm run generate-changelog && vite build",
     "preview": "vite preview",

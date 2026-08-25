@@ -32,6 +32,9 @@ const MOBILE_SCROLL_DELAY_MS = 150;
 const DOWNLOAD_ANCHOR_CLEANUP_MS = 100;
 const SAFE_THUMBNAIL_PREFIX = "data:image/jpeg;base64,";
 const LOCAL_STANDALONE_MODE = false;
+// Enable only in the separate public preview build. That build has no login
+// and always explains that a plan is required instead of running the patcher.
+const NO_LOGIN_ALERT_MODE = false;
 const TELEGRAM_USER_STORAGE_KEY = "theziess.telegram.user";
 const TELEGRAM_CONNECTED_AT_KEY = "theziess.telegram.connectedAt";
 const TELEGRAM_FALLBACK_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
@@ -609,6 +612,14 @@ function closeModal(id) {
     }, 220);
 }
 
+function showNoPlanAlert() {
+    // Keep the plan message in one reusable dialog so both the production
+    // membership gate and the no-login preview behave consistently.
+    closeModal("profileModal");
+    closeModal("paymentModal");
+    openModal("noPlanModal");
+}
+
 function configurePlanActivationModal(plan) {
     const isFreeTrial = plan?.id === "free";
     const isAdminOnly = Boolean(plan?.adminOnly);
@@ -767,17 +778,21 @@ function requireLogin() {
 }
 
 function requireActiveSubscription({ focusPlans = true } = {}) {
+    if (NO_LOGIN_ALERT_MODE) {
+        showNoPlanAlert();
+        return false;
+    }
     if (LOCAL_STANDALONE_MODE) return true;
     if (!requireLogin()) return false;
     if (hasActiveSubscription()) return true;
 
     logMessage(
-        "Start the FREE 1-day trial or ask an administrator to assign PRO, PREMIUM, or MAX before compressing videos.",
+        "អ្នកមិនអាច Patch Video បានទេ។ សូមធ្វើការជាវ ឬទិញ Plan ណាមួយជាមុនសិន។",
         "warning",
     );
 
     if (focusPlans) {
-        showSubscriptionPlans();
+        showNoPlanAlert();
     }
 
     updateAccessUI();
@@ -1097,9 +1112,17 @@ async function initializeMembership() {
         }
     });
     document.getElementById("patchAccessHint")?.addEventListener("click", () => {
+        if (NO_LOGIN_ALERT_MODE) {
+            showNoPlanAlert();
+            return;
+        }
         if (LOCAL_STANDALONE_MODE) return;
         if (!currentUser) {
             openModal("telegramModal");
+            return;
+        }
+        if (!hasActiveSubscription()) {
+            showNoPlanAlert();
             return;
         }
         toggleSubscriptionPlans();
@@ -3003,6 +3026,21 @@ function updatePatchButton() {
     const label = patchBtn.querySelector("span");
     const hint = document.getElementById("patchAccessHint");
 
+    if (NO_LOGIN_ALERT_MODE) {
+        patchBtn.disabled = false;
+        patchBtn.dataset.accessState = "subscription-required";
+        setPatchButtonIcon("ri-vip-crown-line");
+        patchBtn.title = "ត្រូវមាន Plan មុនពេល Patch Video";
+        if (label) label.textContent = "Patch Videos";
+        if (hint) {
+            hint.hidden = false;
+            hint.textContent = "មិនមាន Plan សកម្ម — ចុច Patch Video ដើម្បីមើលព័ត៌មាន។";
+            hint.dataset.action = "no-plan-alert";
+            hint.setAttribute("aria-expanded", "false");
+        }
+        return;
+    }
+
     if (!LOCAL_STANDALONE_MODE && !currentUser) {
         patchBtn.disabled = true;
         patchBtn.dataset.accessState = "login-required";
@@ -3020,17 +3058,18 @@ function updatePatchButton() {
     }
 
     if (!LOCAL_STANDALONE_MODE && !hasActiveSubscription()) {
-        patchBtn.disabled = true;
+        // Keep the button clickable so a new logged-in user can see the clear
+        // Khmer plan notice instead of being left with a disabled control.
+        patchBtn.disabled = false;
         patchBtn.dataset.accessState = "subscription-required";
         setPatchButtonIcon("ri-vip-crown-line");
-        patchBtn.title = "Activate FREE, PRO, PREMIUM, or MAX to unlock video compression.";
-        if (label) label.textContent = "Subscription Required";
+        patchBtn.title = "ត្រូវមាន Plan មុនពេល Patch Video";
+        if (label) label.textContent = "Patch Videos";
         if (hint) {
             hint.hidden = false;
-            hint.textContent = "No active subscription. Click here to view FREE, PRO, PREMIUM, or MAX plans.";
-            hint.dataset.action = "plans";
-            const plansPanel = document.getElementById("subscriptionPanel");
-            hint.setAttribute("aria-expanded", String(Boolean(plansPanel && !plansPanel.hidden)));
+            hint.textContent = "គណនីរបស់អ្នកមិនមាន Plan សកម្មទេ — ចុច Patch Video ដើម្បីមើលព័ត៌មាន។";
+            hint.dataset.action = "no-plan-alert";
+            hint.setAttribute("aria-expanded", "false");
         }
         return;
     }
@@ -3404,6 +3443,10 @@ document.addEventListener("visibilitychange", () => {
 });
 
 patchBtn.addEventListener("click", async () => {
+    if (NO_LOGIN_ALERT_MODE) {
+        showNoPlanAlert();
+        return;
+    }
     if (!requireActiveSubscription()) return;
     if (isFreeCompressionQuotaExhausted()) {
         logMessage(

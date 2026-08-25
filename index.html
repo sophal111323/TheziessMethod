@@ -1004,6 +1004,81 @@
   </div>
 
 
+  <!-- No active plan alert -->
+  <div
+    class="modal-overlay no-plan-modal-overlay"
+    id="noPlanModal"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="noPlanModalTitle"
+    aria-describedby="noPlanModalMessage"
+    aria-hidden="true"
+    hidden
+  >
+    <div class="modal-card no-plan-modal-card">
+      <div class="no-plan-glow no-plan-glow-one" aria-hidden="true"></div>
+      <div class="no-plan-glow no-plan-glow-two" aria-hidden="true"></div>
+
+      <button
+        type="button"
+        class="modal-close-btn no-plan-close"
+        data-close-modal="noPlanModal"
+        aria-label="បិទ"
+      >
+        <i class="ri-close-line" aria-hidden="true"></i>
+      </button>
+
+      <div class="no-plan-hero">
+        <div class="no-plan-icon" aria-hidden="true">
+          <span></span>
+          <i class="ri-vip-crown-2-fill"></i>
+        </div>
+
+        <span class="no-plan-eyebrow">
+          <i class="ri-error-warning-fill" aria-hidden="true"></i>
+          PLAN REQUIRED
+        </span>
+
+        <h2 id="noPlanModalTitle">មិនមាន Plan សកម្ម</h2>
+        <p id="noPlanModalMessage">
+          អ្នកមិនអាច <strong>Patch Video</strong> បានទេ។ សូមធ្វើការជាវ
+          ឬទិញ <strong>Plan</strong> ណាមួយជាមុនសិន!
+        </p>
+      </div>
+
+      <div class="no-plan-contact">
+        <span class="no-plan-contact-icon" aria-hidden="true">
+          <i class="ri-customer-service-2-fill"></i>
+        </span>
+        <span>
+          <small>ទាក់ទងទៅកាន់ Admin</small>
+          <strong>@thephal</strong>
+        </span>
+        <i class="ri-arrow-right-up-line" aria-hidden="true"></i>
+      </div>
+
+      <div class="modal-actions no-plan-actions">
+        <button
+          type="button"
+          class="modal-btn modal-btn-cancel no-plan-cancel"
+          data-close-modal="noPlanModal"
+        >
+          បិទ
+        </button>
+        <a
+          class="modal-btn modal-btn-confirm no-plan-admin-btn"
+          href="https://t.me/thephal"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="ri-telegram-2-fill" aria-hidden="true"></i>
+          ទាក់ទង Admin
+        </a>
+      </div>
+    </div>
+  </div>
+
+
 
   <!-- Telegram profile and subscription modal -->
   <div
@@ -1557,7 +1632,7 @@
 
   <script
     type="module"
-    src="app.js?v=20260822-compact-phone-row-v8"
+    src="app.js?v=20260825-plan-alert-v1"
   ></script>
 </body>
 </html>
