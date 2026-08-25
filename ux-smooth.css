@@ -3797,3 +3797,28 @@ button:disabled,
     min-height: 44px;
   }
 }
+
+/* Keep the no-plan alert centered on phones. This intentionally comes after
+   the global mobile bottom-sheet rule so it cannot be overridden. */
+@media (max-width: 560px) {
+  #noPlanModal.no-plan-modal-overlay {
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    padding:
+      max(12px, env(safe-area-inset-top, 0px))
+      max(12px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-left, 0px));
+    overflow-y: auto;
+  }
+
+  #noPlanModal .no-plan-modal-card {
+    width: min(100%, 440px);
+    max-height: calc(100dvh - 24px);
+    margin: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
