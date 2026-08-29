@@ -42,7 +42,15 @@ export function getTelegramBotToken({ required = true } = {}) {
  */
 export function getTelegramWebhookSecret({ required = true } = {}) {
   const configured = optionalEnvironment("TELEGRAM_WEBHOOK_SECRET");
-  if (configured) return configured;
+  if (configured) {
+    if (/^[A-Za-z0-9_-]{1,256}$/.test(configured)) {
+      return configured;
+    }
+    return crypto
+      .createHash("sha256")
+      .update(`theziess-telegram-webhook:${configured}`)
+      .digest("hex");
+  }
 
   const token = getTelegramBotToken({ required: false });
   const seed = optionalEnvironment("SESSION_SECRET") || token;
