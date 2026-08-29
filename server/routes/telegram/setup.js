@@ -60,7 +60,15 @@ function validateManualSetupKey(req) {
   const automatic = getHeaderValue(req, "x-theziess-auto-setup") === "1";
   if (automatic) return true;
 
-  return safeEqual(getProvidedSetupKey(req), configuredKey);
+  const providedKey = getProvidedSetupKey(req);
+  if (safeEqual(providedKey, configuredKey)) return true;
+
+  // In URL queries, '+' is often decoded to a space (' '). Support matching when spaces were decoded from '+'.
+  if (providedKey && configuredKey.includes("+") && safeEqual(providedKey.replace(/ /g, "+"), configuredKey)) {
+    return true;
+  }
+
+  return false;
 }
 
 const BOT_CONFIGURATION_VERSION = "telegram-admin-v13";
