@@ -42,14 +42,24 @@ export function getRequestOrigin(req) {
  * production project URL instead of a temporary preview deployment URL.
  */
 export function getPublicAppOrigin(req) {
+  let requestOrigin = "";
+  try {
+    if (req) requestOrigin = getRequestOrigin(req);
+  } catch {}
+
   const configured =
     process.env.TELEGRAM_PUBLIC_URL ||
     process.env.PUBLIC_APP_URL ||
     process.env.VERCEL_PROJECT_PRODUCTION_URL ||
     "";
 
+  if (requestOrigin && /^https?:\/\/www\./i.test(requestOrigin) && configured && !/^https?:\/\/www\./i.test(configured)) {
+    return normalizeOrigin(requestOrigin);
+  }
+
   if (configured) return normalizeOrigin(configured);
-  return getRequestOrigin(req);
+  if (requestOrigin) return normalizeOrigin(requestOrigin);
+  return "";
 }
 
 export function getTelegramRedirectUri(req) {
