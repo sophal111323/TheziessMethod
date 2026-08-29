@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import pg from "pg";
 
 const { Pool } = pg;
@@ -38,6 +39,7 @@ const DAILY_COMPRESSION_USAGE_TABLE = "theziess_daily_compression_usage_v1";
 const TIKTOK_CONNECTIONS_TABLE = "theziess_tiktok_connections_v1";
 const TIKTOK_UPLOADS_TABLE = "theziess_tiktok_uploads_v1";
 const MAINTENANCE_TABLE = "theziess_maintenance_state_v1";
+const FOREIGNER_KEYS_TABLE = "theziess_foreigner_keys_v1";
 const FREE_TRIAL_DURATION_DAYS = 1;
 
 export const DEFAULT_MAINTENANCE_MESSAGE =
@@ -369,6 +371,25 @@ export async function ensureSchema() {
       await pool.query(`
         CREATE INDEX IF NOT EXISTS theziess_tiktok_uploads_v1_user_status_idx
           ON ${TIKTOK_UPLOADS_TABLE}(user_key, status, updated_at DESC)
+      `);
+
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS ${FOREIGNER_KEYS_TABLE} (
+          id BIGSERIAL PRIMARY KEY,
+          key_code VARCHAR(64) UNIQUE NOT NULL,
+          created_by TEXT NOT NULL,
+          duration_days INTEGER NOT NULL DEFAULT 1,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '1 day'),
+          is_revoked BOOLEAN NOT NULL DEFAULT FALSE,
+          used_count INTEGER NOT NULL DEFAULT 0,
+          last_used_at TIMESTAMPTZ
+        )
+      `);
+
+      await pool.query(`
+        CREATE INDEX IF NOT EXISTS theziess_foreigner_keys_v1_code_idx
+          ON ${FOREIGNER_KEYS_TABLE}(key_code, is_revoked, expires_at DESC)
       `);
 
 
@@ -1725,3 +1746,182 @@ export async function findActiveTikTokUpload(userId) {
   );
   return result.rows[0] || null;
 }
+
+export function generateRandomForeignerCode() {
+  const p1 = crypto.randomBytes(2).toString("hex").toUpperCase();
+  const p2 = crypto.randomBytes(2).toString("hex").toUpperCase();
+  const p3 = crypto.randomBytes(2).toString("hex").toUpperCase();
+  return `TZF-${p1}-${p2}-${p3}`;
+}
+
+export async function generateForeignerKey({
+  adminTelegramId,
+  durationDays = 1,
+  customCode = null,
+} = {}) {
+  await ensureSchema();
+  const keyCode = String(customCode || generateRandomForeignerCode()).trim().toUpperCase();
+  const days = Math.max(1, Math.min(365, Number(durationDays) || 1));
+
+  const result = await pool.query(
+    `
+      INSERT INTO ${FOREIGNER_KEYS_TABLE} (
+        key_code,
+        created_by,
+        duration_days,
+        created_at,
+        expires_at
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        NOW(),
+        NOW() + ($3::INTEGER * INTERVAL '1 day')
+      )
+      RETURNING *
+    `,
+    [keyCode, String(adminTelegramId || "admin"), days],
+  );
+
+  return result.rows[0];
+}
+
+export async function verifyForeignerKey(rawKey) {
+  await ensureSchema();
+  const cleanKey = String(rawKey || "").trim().toUpperCase();
+
+  if (!cleanKey) {
+    return {
+      valid: false,
+      reason: "KEY_REQUIRED",
+      error: "Access key is required.",
+    };
+  }
+
+  const result = await pool.query(
+    `
+      SELECT *
+      FROM ${FOREIGNER_KEYS_TABLE}
+      WHERE key_code = $1
+      LIMIT 1
+    `,
+    [cleanKey],
+  );
+
+  const row = result.rows[0];
+  if (!row) {
+    return {
+      valid: false,
+      reason: "KEY_NOT_FOUND",
+      error: "Invalid access key.",
+    };
+  }
+
+  if (row.is_revoked) {
+    return {
+      valid: false,
+      reason: "KEY_REVOKED",
+      error: "This access key has been revoked.",
+    };
+  }
+
+  const expiresAt = new Date(row.expires_at).getTime();
+  if (Number.isFinite(expiresAt) && expiresAt <= Date.now()) {
+    return {
+      valid: false,
+      reason: "KEY_EXPIRED",
+      error: "This access key has expired (1-day limit reached).",
+      expiresAt,
+    };
+  }
+
+  // Update usage stats
+  await pool.query(
+    `
+      UPDATE ${FOREIGNER_KEYS_TABLE}
+      SET used_count = used_count + 1,
+          last_used_at = NOW()
+      WHERE id = $1
+    `,
+    [row.id],
+  );
+
+  return {
+    valid: true,
+    key: row.key_code,
+    expiresAt,
+    durationDays: row.duration_days,
+    createdAt: new Date(row.created_at).getTime(),
+  };
+}
+
+export async function checkForeignerKeyStatus(rawKey) {
+  await ensureSchema();
+  const cleanKey = String(rawKey || "").trim().toUpperCase();
+  if (!cleanKey) return { valid: false };
+
+  const result = await pool.query(
+    `
+      SELECT key_code, expires_at, is_revoked, duration_days
+      FROM ${FOREIGNER_KEYS_TABLE}
+      WHERE key_code = $1
+      LIMIT 1
+    `,
+    [cleanKey],
+  );
+
+  const row = result.rows[0];
+  if (!row || row.is_revoked) return { valid: false };
+
+  const expiresAt = new Date(row.expires_at).getTime();
+  const isExpired = Number.isFinite(expiresAt) && expiresAt <= Date.now();
+
+  return {
+    valid: !isExpired,
+    key: row.key_code,
+    expiresAt,
+    durationDays: row.duration_days,
+  };
+}
+
+export async function listAdminForeignerKeys(limit = 15) {
+  await ensureSchema();
+  const safeLimit = Math.max(1, Math.min(100, Number(limit) || 15));
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        key_code,
+        created_by,
+        duration_days,
+        created_at,
+        expires_at,
+        is_revoked,
+        used_count,
+        last_used_at,
+        (expires_at > NOW() AND NOT is_revoked) AS is_active
+      FROM ${FOREIGNER_KEYS_TABLE}
+      ORDER BY created_at DESC
+      LIMIT $1
+    `,
+    [safeLimit],
+  );
+  return result.rows;
+}
+
+export async function revokeForeignerKey(rawKey) {
+  await ensureSchema();
+  const cleanKey = String(rawKey || "").trim().toUpperCase();
+  const result = await pool.query(
+    `
+      UPDATE ${FOREIGNER_KEYS_TABLE}
+      SET is_revoked = TRUE
+      WHERE key_code = $1
+      RETURNING *
+    `,
+    [cleanKey],
+  );
+  return result.rows[0] || null;
+}
+

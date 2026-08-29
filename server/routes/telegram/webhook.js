@@ -129,6 +129,10 @@ function dashboardKeyboard() {
         { text: "🔄 Change Plan", callback_data: "admin:grant:help" },
       ],
       [
+        { text: "🔑 Foreigner Key", callback_data: "admin:foreigner:newkey" },
+        { text: "📋 Key List", callback_data: "admin:foreigner:list" },
+      ],
+      [
         { text: "💳 Payments", callback_data: "admin:payments" },
         { text: "🛠 Maintenance", callback_data: "admin:maintenance:status" },
       ],
@@ -639,6 +643,134 @@ async function sendPayments(chatId) {
   });
 }
 
+async function sendNewForeignerKey(chatId, adminTelegramId) {
+  try {
+    const { generateForeignerKey } = await getDatabaseModule();
+    const key = await generateForeignerKey({
+      adminTelegramId,
+      durationDays: 1,
+    });
+
+    const lines = [
+      "🔑 <b>Foreigner Access Key Generated</b>",
+      "",
+      `Key: <code>${escapeTelegramHtml(key.key_code)}</code>`,
+      "",
+      `⏳ Duration: <b>${key.duration_days} Day (24 Hours)</b>`,
+      `🕒 Expires: <b>${escapeTelegramHtml(formatDate(key.expires_at))}</b>`,
+      `👤 Created by Admin: <code>${escapeTelegramHtml(adminTelegramId)}</code>`,
+      "",
+      "<i>Copy and send this key to the foreign user. They must enter it on the website to unlock the Foreigner patch page.</i>",
+    ];
+
+    await sendTelegramMessage(chatId, lines.join("\n"), {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🔑 Generate Another Key", callback_data: "admin:foreigner:newkey" }],
+          [{ text: "📋 View All Keys", callback_data: "admin:foreigner:list" }],
+          [{ text: "🏠 Admin", callback_data: "admin:home" }],
+        ],
+      },
+    });
+  } catch (error) {
+    console.error("Failed to generate foreigner key:", error);
+    await sendTelegramMessage(
+      chatId,
+      `❌ <b>Unable to generate key</b>\n\n${escapeTelegramHtml(error?.message || "Database error")}`,
+      {
+        reply_markup: {
+          inline_keyboard: [[{ text: "🏠 Admin", callback_data: "admin:home" }]],
+        },
+      },
+    );
+  }
+}
+
+async function sendForeignerKeysList(chatId) {
+  try {
+    const { listAdminForeignerKeys } = await getDatabaseModule();
+    const keys = await listAdminForeignerKeys(10);
+    const lines = ["<b>🔑 Foreigner Access Keys</b>", ""];
+
+    if (!keys.length) {
+      lines.push("No foreigner keys have been generated yet.");
+      lines.push("", "Use <code>/key</code> or <code>/genkey</code> to create one.");
+    } else {
+      keys.forEach((k, index) => {
+        const isExpired = new Date(k.expires_at).getTime() <= Date.now();
+        const statusBadge = k.is_revoked
+          ? "🚫 Revoked"
+          : isExpired
+            ? "🔴 Expired"
+            : "🟢 Active";
+
+        lines.push(
+          `${index + 1}. <code>${escapeTelegramHtml(k.key_code)}</code> · ${statusBadge}`,
+          `   Expires: ${escapeTelegramHtml(formatDate(k.expires_at))} · Uses: ${k.used_count || 0}`,
+        );
+      });
+      lines.push("", "To revoke a key: <code>/revokekey KEY_CODE</code>");
+    }
+
+    await sendTelegramMessage(chatId, lines.join("\n"), {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "➕ Generate New Key", callback_data: "admin:foreigner:newkey" }],
+          [{ text: "🏠 Admin", callback_data: "admin:home" }],
+        ],
+      },
+    });
+  } catch (error) {
+    console.error("Failed to list foreigner keys:", error);
+    await sendTelegramMessage(
+      chatId,
+      `❌ <b>Unable to list keys</b>\n\n${escapeTelegramHtml(error?.message || "Database error")}`,
+    );
+  }
+}
+
+async function handleRevokeForeignerKey(chatId, keyCode) {
+  const cleanKey = String(keyCode || "").trim();
+  if (!cleanKey) {
+    await sendTelegramMessage(
+      chatId,
+      "Usage: <code>/revokekey TZF-XXXX-XXXX-XXXX</code>",
+    );
+    return;
+  }
+
+  try {
+    const { revokeForeignerKey } = await getDatabaseModule();
+    const revoked = await revokeForeignerKey(cleanKey);
+
+    if (!revoked) {
+      await sendTelegramMessage(
+        chatId,
+        `❌ Key <code>${escapeTelegramHtml(cleanKey)}</code> was not found.`,
+      );
+      return;
+    }
+
+    await sendTelegramMessage(
+      chatId,
+      `✅ Foreigner key <code>${escapeTelegramHtml(revoked.key_code)}</code> has been revoked.`,
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "📋 View Keys", callback_data: "admin:foreigner:list" }],
+            [{ text: "🏠 Admin", callback_data: "admin:home" }],
+          ],
+        },
+      },
+    );
+  } catch (error) {
+    await sendTelegramMessage(
+      chatId,
+      `❌ Error revoking key: ${escapeTelegramHtml(error?.message || "Unknown error")}`,
+    );
+  }
+}
+
 function maintenanceKeyboard(enabled) {
   return {
     inline_keyboard: [
@@ -738,6 +870,12 @@ async function handleAdminAction(chatId, action, adminTelegramId) {
   if (action === "admin:subscriptions") return sendSubscriptions(chatId);
   if (action === "admin:trials") return sendTrials(chatId);
   if (action === "admin:payments") return sendPayments(chatId);
+  if (action === "admin:foreigner:newkey") {
+    return sendNewForeignerKey(chatId, adminTelegramId);
+  }
+  if (action === "admin:foreigner:list") {
+    return sendForeignerKeysList(chatId);
+  }
   const topCompressMatch = /^admin:topcompress:(24h|7d|30d|all)$/.exec(action);
   if (topCompressMatch) return sendTopCompressors(chatId, topCompressMatch[1]);
   if (action === "admin:grant:help") return sendGrantHelp(chatId);
@@ -839,7 +977,8 @@ async function handleMessage(message) {
     "testwelcome", "id", "whoami", "ping", "start", "help", "admin",
     "stats", "users", "user", "grant", "setplan", "addplan", "addsubscription",
     "revoke", "removeplan", "plans", "subscriptions", "trials", "payments",
-    "maintenance", "topcompress", "topcompressors",
+    "maintenance", "topcompress", "topcompressors", "key", "genkey",
+    "foreignerkey", "createkey", "newkey", "keys", "foreignerkeys", "revokekey",
   ]);
 
   if (isGroupChat && command && !knownCommands.has(command)) {
@@ -967,6 +1106,21 @@ async function handleMessage(message) {
 
   if (command === "topcompress" || command === "topcompressors") {
     await sendTopCompressors(chatId, argument || "7d");
+    return;
+  }
+
+  if (command === "key" || command === "genkey" || command === "foreignerkey" || command === "createkey" || command === "newkey") {
+    await sendNewForeignerKey(chatId, senderId);
+    return;
+  }
+
+  if (command === "keys" || command === "foreignerkeys") {
+    await sendForeignerKeysList(chatId);
+    return;
+  }
+
+  if (command === "revokekey") {
+    await handleRevokeForeignerKey(chatId, argument);
     return;
   }
 

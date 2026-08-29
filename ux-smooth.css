@@ -659,12 +659,17 @@ textarea:focus-visible {
 /* ---------- Bottom navigation ---------- */
 
 .app-bottom-nav {
-  width: min(calc(100% - 22px),680px);
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  grid-template-rows: 1fr !important;
+  grid-auto-flow: column !important;
+  align-items: stretch;
+  width: min(calc(100% - 16px), 720px);
   min-height: 68px;
-  padding: 7px;
-  gap: 4px;
+  padding: 7px 5px;
+  gap: 3px;
   border-radius: 21px;
-  background: rgba(9,3,20,.84);
+  background: rgba(9,3,20,.88);
   border-color: rgba(216,180,254,.20);
   box-shadow: 0 16px 48px rgba(0,0,0,.48), inset 0 1px 0 rgba(255,255,255,.04);
 }
@@ -694,6 +699,7 @@ textarea:focus-visible {
 /* ---------- View transition ---------- */
 
 body[data-app-view="compress"] .panel-right:not([hidden]),
+body[data-app-view="foreigner"] .panel-right:not([hidden]),
 body[data-app-view="history"] #historySection:not([hidden]),
 body[data-app-view="check"] .panel-video-check:not([hidden]) {
   animation: ux-view-in 300ms var(--ux-ease-out) both;
@@ -931,17 +937,23 @@ body[data-app-view="check"] .panel-video-check:not([hidden]) {
   }
 
   .app-bottom-nav {
-    width: calc(100% - 12px);
-    min-height: 64px;
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    grid-template-rows: 1fr !important;
+    grid-auto-flow: column !important;
+    align-items: stretch;
+    width: calc(100% - 10px);
+    min-height: 62px;
     bottom: max(6px,env(safe-area-inset-bottom));
-    padding: 5px;
+    padding: 5px 3px;
     gap: 1px;
     border-radius: 18px;
   }
 
   .app-nav-button {
-    min-height: 52px;
-    padding-inline: 2px;
+    min-width: 0 !important;
+    min-height: 50px;
+    padding-inline: 1px;
     border-radius: 13px;
     font-size: 9px;
   }

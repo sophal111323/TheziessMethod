@@ -101,6 +101,410 @@
         visibility 180ms linear;
     }
 
+    .app-bottom-nav {
+      display: grid !important;
+      grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+      grid-template-rows: 1fr !important;
+      grid-auto-flow: column !important;
+    }
+
+    .foreigner-banner {
+      position: relative !important;
+      isolation: isolate;
+      overflow: hidden !important;
+      width: 100% !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 16px !important;
+      padding: 16px 20px !important;
+      margin: 0 0 20px 0 !important;
+      border-radius: 22px !important;
+      background: linear-gradient(135deg, rgba(20, 10, 42, 0.94) 0%, rgba(8, 3, 20, 0.98) 100%) !important;
+      border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(56, 189, 248, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+      backdrop-filter: blur(20px) saturate(130%) !important;
+      -webkit-backdrop-filter: blur(20px) saturate(130%) !important;
+    }
+
+    .foreigner-banner[hidden] {
+      display: none !important;
+    }
+
+    .foreigner-banner-glow {
+      position: absolute;
+      pointer-events: none;
+      border-radius: 50%;
+      filter: blur(40px);
+      z-index: -1;
+    }
+
+    .foreigner-banner-glow-one {
+      top: -40px;
+      left: -20px;
+      width: 120px;
+      height: 120px;
+      background: rgba(56, 189, 248, 0.3);
+    }
+
+    .foreigner-banner-glow-two {
+      bottom: -40px;
+      right: 20%;
+      width: 120px;
+      height: 120px;
+      background: rgba(139, 92, 246, 0.25);
+    }
+
+    .foreigner-banner-left {
+      display: flex !important;
+      align-items: center !important;
+      gap: 14px !important;
+      min-width: 0 !important;
+    }
+
+    .foreigner-banner-icon-shell {
+      width: 46px !important;
+      height: 46px !important;
+      flex-shrink: 0 !important;
+      display: grid !important;
+      place-items: center !important;
+      border-radius: 15px !important;
+      background: linear-gradient(135deg, #0284c7 0%, #7c3aed 100%) !important;
+      color: #ffffff !important;
+      font-size: 22px !important;
+      box-shadow: 0 8px 20px rgba(2, 132, 199, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    }
+
+    .foreigner-banner-text {
+      min-width: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 3px !important;
+    }
+
+    .foreigner-banner-header {
+      display: flex !important;
+      align-items: center !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+    }
+
+    .foreigner-badge {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+      padding: 4px 10px !important;
+      border-radius: 8px !important;
+      background: linear-gradient(135deg, #0284c7, #7c3aed) !important;
+      color: #ffffff !important;
+      font-family: "JetBrains Mono", monospace !important;
+      font-size: 10.5px !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.06em !important;
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35) !important;
+    }
+
+    .foreigner-badge-pill {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      padding: 4px 12px !important;
+      border-radius: 999px !important;
+      background: rgba(56, 189, 248, 0.12) !important;
+      border: 1px solid rgba(56, 189, 248, 0.3) !important;
+      color: #38bdf8 !important;
+      font-family: "JetBrains Mono", monospace !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+    }
+
+    .foreigner-status-dot {
+      width: 7px !important;
+      height: 7px !important;
+      border-radius: 50% !important;
+      background: #38bdf8 !important;
+      box-shadow: 0 0 8px #38bdf8 !important;
+      flex-shrink: 0 !important;
+    }
+
+    .foreigner-banner-desc {
+      margin: 0 !important;
+      font-size: 11.5px !important;
+      line-height: 1.4 !important;
+      color: #b8adca !important;
+      font-weight: 500 !important;
+    }
+
+    .foreigner-change-key-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 8px !important;
+      padding: 9px 18px !important;
+      min-height: 42px !important;
+      border-radius: 13px !important;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.18) 0%, rgba(139, 92, 246, 0.22) 100%) !important;
+      border: 1.5px solid rgba(56, 189, 248, 0.45) !important;
+      color: #ffffff !important;
+      font-family: inherit !important;
+      font-size: 12.5px !important;
+      font-weight: 800 !important;
+      cursor: pointer !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35) !important;
+      transition: all 0.2s ease !important;
+    }
+
+    .foreigner-change-key-btn:hover {
+      background: linear-gradient(135deg, #0284c7 0%, #7c3aed 100%) !important;
+      border-color: transparent !important;
+      color: #ffffff !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 10px 24px rgba(2, 132, 199, 0.45), 0 0 18px rgba(124, 58, 237, 0.3) !important;
+    }
+
+    #foreignerKeyModal .foreigner-key-modal-card {
+      position: relative !important;
+      isolation: isolate;
+      width: min(480px, calc(100vw - 28px)) !important;
+      max-height: min(720px, calc(100dvh - 28px));
+      padding: 0 !important;
+      border: 1px solid rgba(56, 189, 248, .38) !important;
+      border-radius: 28px !important;
+      background: linear-gradient(160deg, rgba(28, 11, 49, .96), rgba(8, 3, 18, .98) 65%) !important;
+      box-shadow: 0 30px 100px rgba(0, 0, 0, .75), 0 0 52px rgba(56, 189, 248, .14) !important;
+      overflow: hidden !important;
+      transform: none;
+    }
+
+    #foreignerKeyModal .foreigner-key-close-btn {
+      position: absolute !important;
+      top: 16px !important;
+      right: 16px !important;
+      z-index: 10;
+      width: 36px !important;
+      height: 36px !important;
+      padding: 0 !important;
+      display: grid !important;
+      place-items: center;
+      border: 1px solid rgba(216, 180, 254, .18) !important;
+      border-radius: 999px !important;
+      background: rgba(255, 255, 255, .06) !important;
+      box-shadow: none !important;
+      color: #c4b5fd !important;
+      cursor: pointer;
+    }
+
+    #foreignerKeyModal .foreigner-key-hero {
+      text-align: center;
+      padding: 34px 24px 14px;
+    }
+
+    #foreignerKeyModal .foreigner-key-icon {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      margin: 4px auto 18px;
+      border-radius: 24px;
+      background: linear-gradient(145deg, rgba(34, 211, 238, 0.28), rgba(124, 58, 237, 0.35));
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 16px 38px rgba(2, 132, 199, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      color: #38bdf8;
+    }
+
+    #foreignerKeyModal .foreigner-key-icon span {
+      position: absolute;
+      inset: -7px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 29px;
+    }
+
+    #foreignerKeyModal .foreigner-key-icon i {
+      font-size: 38px;
+      color: #38bdf8;
+      filter: drop-shadow(0 0 14px rgba(56, 189, 248, 0.6));
+    }
+
+    #foreignerKeyModal .foreigner-key-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 13px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, .1);
+      border: 1px solid rgba(56, 189, 248, .3);
+      color: #38bdf8;
+      font: 800 10.5px/1 "JetBrains Mono", monospace;
+      letter-spacing: .12em;
+      margin-bottom: 12px;
+    }
+
+    #foreignerKeyModal .foreigner-key-hero h2 {
+      font-size: clamp(22px, 5vw, 26px);
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0 0 10px;
+    }
+
+    #foreignerKeyModal .foreigner-key-hero p {
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: #cfc6dd;
+      margin: 0 auto;
+      max-width: 360px;
+    }
+
+    #foreignerKeyModal .foreigner-key-body {
+      padding: 8px 24px 28px;
+    }
+
+    #foreignerKeyModal .foreigner-key-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    #foreignerKeyModal .foreigner-key-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    #foreignerKeyModal .foreigner-key-input-wrap {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: rgba(5, 2, 12, .88);
+      border: 1.5px solid rgba(56, 189, 248, .32);
+      border-radius: 16px;
+      padding: 4px 12px 4px 14px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, .4);
+    }
+
+    #foreignerKeyModal .foreigner-key-input-wrap:focus-within {
+      border-color: #38bdf8;
+      box-shadow: 0 0 24px rgba(56, 189, 248, .25), inset 0 2px 6px rgba(0, 0, 0, .4);
+    }
+
+    #foreignerKeyModal .foreigner-key-input-icon {
+      font-size: 20px;
+      color: #38bdf8;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+
+    #foreignerKeyModal .foreigner-key-input-wrap input {
+      flex: 1;
+      min-width: 0;
+      background: transparent;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      color: #ffffff;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      padding: 12px 0;
+    }
+
+    #foreignerKeyModal .foreigner-key-input-wrap input::placeholder {
+      color: #64748b;
+      font-weight: 500;
+      letter-spacing: .04em;
+    }
+
+    #foreignerKeyModal .foreigner-key-paste-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 16px;
+      min-height: 52px;
+      border-radius: 16px;
+      border: 1px solid rgba(56, 189, 248, .3);
+      background: rgba(56, 189, 248, .12);
+      color: #38bdf8;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    #foreignerKeyModal .foreigner-key-paste-btn:hover {
+      background: rgba(56, 189, 248, .25);
+      color: #ffffff;
+      border-color: #38bdf8;
+    }
+
+    #foreignerKeyModal .foreigner-key-error {
+      margin: 0;
+      color: #fda4af;
+      font-size: 12px;
+      line-height: 1.5;
+      padding: 10px 14px;
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.28);
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    #foreignerKeyModal .foreigner-key-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    #foreignerKeyModal .foreigner-key-cancel-btn {
+      min-height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, .06);
+      color: #e2e8f0;
+      font-family: "Noto Sans Khmer", inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #foreignerKeyModal .foreigner-key-cancel-btn:hover {
+      background: rgba(255, 255, 255, .12);
+      border-color: rgba(255, 255, 255, .25);
+      color: #ffffff;
+    }
+
+    #foreignerKeyModal .foreigner-key-submit-btn {
+      min-height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 16px;
+      background: linear-gradient(135deg, #0284c7 0%, #7c3aed 55%, #38bdf8 100%);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 28px rgba(2, 132, 199, .35);
+    }
+
+    #foreignerKeyModal .foreigner-key-submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 36px rgba(2, 132, 199, .48), 0 0 24px rgba(124, 58, 237, 0.3);
+      filter: brightness(1.06);
+    }
+
     .app-boot-shell {
       position: fixed;
       inset: 0;
@@ -313,6 +717,39 @@
 
     <main class="container">
       <section class="panel panel-right">
+        <div class="foreigner-banner" id="foreignerBanner" hidden>
+          <div class="foreigner-banner-glow foreigner-banner-glow-one" aria-hidden="true"></div>
+          <div class="foreigner-banner-glow foreigner-banner-glow-two" aria-hidden="true"></div>
+
+          <div class="foreigner-banner-left">
+            <div class="foreigner-banner-icon-shell" aria-hidden="true">
+              <i class="ri-global-fill"></i>
+            </div>
+            <div class="foreigner-banner-text">
+              <div class="foreigner-banner-header">
+                <span class="foreigner-badge">FOREIGNER MODE</span>
+                <span class="foreigner-badge-pill" id="foreignerKeyStatusPill">
+                  <span class="foreigner-status-dot"></span>
+                  <span id="foreignerKeyCountdown">Key required · 1-day access</span>
+                </span>
+              </div>
+              <p class="foreigner-banner-desc">
+                Access granted with 1-Day Key · No Telegram Login required
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="foreigner-change-key-btn"
+            id="foreignerChangeKeyBtn"
+            title="Enter or change Foreigner Access Key"
+          >
+            <i class="ri-key-2-fill" aria-hidden="true"></i>
+            <span>Enter Key</span>
+          </button>
+        </div>
+
         <div
           class="drop-zone"
           id="dropZone"
@@ -659,6 +1096,16 @@
         </svg>
       </span>
       <span>Patch</span>
+    </button>
+
+    <button
+      type="button"
+      class="app-nav-button"
+      id="navForeignerBtn"
+      data-view="foreigner"
+    >
+      <i class="ri-global-line" aria-hidden="true"></i>
+      <span>Foreigner</span>
     </button>
 
     <button
@@ -1507,6 +1954,100 @@
   </div>
 
 
+  <!-- Foreigner Key Access modal -->
+  <div
+    class="modal-overlay foreigner-key-modal-overlay"
+    id="foreignerKeyModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="foreignerKeyModalTitle"
+    hidden
+  >
+    <div class="modal-card foreigner-key-modal-card">
+      <div class="foreigner-key-glow foreigner-key-glow-one" aria-hidden="true"></div>
+      <div class="foreigner-key-glow foreigner-key-glow-two" aria-hidden="true"></div>
+
+      <button
+        type="button"
+        class="foreigner-key-close-btn"
+        id="closeForeignerKeyModalBtn"
+        data-close-modal="foreignerKeyModal"
+        aria-label="បិទ"
+      >
+        <i class="ri-close-line" aria-hidden="true"></i>
+      </button>
+
+      <div class="foreigner-key-hero">
+        <div class="foreigner-key-icon" aria-hidden="true">
+          <span></span>
+          <i class="ri-key-2-fill"></i>
+        </div>
+
+        <span class="foreigner-key-eyebrow">
+          <i class="ri-shield-keyhole-fill" aria-hidden="true"></i>
+          KEY REQUIRED · 1-DAY ACCESS
+        </span>
+
+        <h2 id="foreignerKeyModalTitle">Foreigner Access Key</h2>
+        <p>
+          សូមបញ្ចូល Access Key ដើម្បីបើកដំណើរការមុខងារ Foreigner។ Key មានសុពលភាពរយៈពេល 1 ថ្ងៃ (24 ម៉ោង)។
+        </p>
+      </div>
+
+      <div class="foreigner-key-body">
+        <form class="foreigner-key-form" id="foreignerKeyForm">
+          <div class="foreigner-key-input-row">
+            <div class="foreigner-key-input-wrap">
+              <i class="ri-key-2-line foreigner-key-input-icon" aria-hidden="true"></i>
+              <input
+                type="text"
+                id="foreignerKeyInput"
+                name="foreignerKey"
+                placeholder="TZF-XXXX-XXXX-XXXX"
+                autocomplete="off"
+                spellcheck="false"
+                required
+              >
+            </div>
+            <button
+              type="button"
+              class="foreigner-key-paste-btn"
+              id="foreignerKeyPasteBtn"
+              title="Paste key from clipboard"
+              aria-label="Paste key from clipboard"
+            >
+              <i class="ri-clipboard-line" aria-hidden="true"></i>
+              <span>Paste</span>
+            </button>
+          </div>
+
+          <p class="foreigner-key-error" id="foreignerKeyError" role="alert" hidden></p>
+
+          <div class="foreigner-key-actions">
+            <button
+              type="button"
+              class="foreigner-key-cancel-btn"
+              id="cancelForeignerKeyBtn"
+              data-close-modal="foreignerKeyModal"
+            >
+              បោះបង់
+            </button>
+
+            <button
+              type="submit"
+              class="foreigner-key-submit-btn"
+              id="submitForeignerKeyBtn"
+            >
+              <i class="ri-lock-unlock-line" aria-hidden="true"></i>
+              <span>Unlock Foreigner</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
   <!-- Tutorial page -->
   <div
     class="modal-overlay tutorial-page-overlay"
@@ -1632,7 +2173,7 @@
 
   <script
     type="module"
-    src="app.js?v=20260825-plan-alert-v1"
+    src="app.js?v=20260829-foreigner-v2"
   ></script>
 </body>
 </html>

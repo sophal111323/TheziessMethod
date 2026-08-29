@@ -38,12 +38,96 @@ const NO_LOGIN_ALERT_MODE = false;
 const TELEGRAM_USER_STORAGE_KEY = "theziess.telegram.user";
 const TELEGRAM_CONNECTED_AT_KEY = "theziess.telegram.connectedAt";
 const TELEGRAM_FALLBACK_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
+const FOREIGNER_KEY_STORAGE_KEY = "theziess.foreigner.accessKey";
+const FOREIGNER_EXPIRES_AT_KEY = "theziess.foreigner.expiresAt";
 const MAINTENANCE_STATUS_URL = "/api/maintenance/status";
 const MAINTENANCE_REQUEST_TIMEOUT_MS = 2500;
 const MAINTENANCE_POLL_INTERVAL_MS = 15_000;
 
 let maintenanceModeActive = false;
 let maintenancePollTimer = null;
+
+function getStoredForeignerKey() {
+    try {
+        const key = localStorage.getItem(FOREIGNER_KEY_STORAGE_KEY);
+        const expiresAt = Number(localStorage.getItem(FOREIGNER_EXPIRES_AT_KEY));
+        if (!key || !Number.isFinite(expiresAt)) return null;
+        if (expiresAt <= Date.now()) {
+            clearStoredForeignerKey();
+            return null;
+        }
+        return { key, expiresAt };
+    } catch {
+        return null;
+    }
+}
+
+function storeForeignerKey(key, expiresAt) {
+    try {
+        localStorage.setItem(FOREIGNER_KEY_STORAGE_KEY, String(key).trim().toUpperCase());
+        localStorage.setItem(FOREIGNER_EXPIRES_AT_KEY, String(expiresAt));
+    } catch (e) {
+        console.warn("Unable to save foreigner key", e);
+    }
+}
+
+function clearStoredForeignerKey() {
+    try {
+        localStorage.removeItem(FOREIGNER_KEY_STORAGE_KEY);
+        localStorage.removeItem(FOREIGNER_EXPIRES_AT_KEY);
+    } catch (e) {
+        console.warn("Unable to clear foreigner key", e);
+    }
+}
+
+function isForeignerKeyActive() {
+    return Boolean(getStoredForeignerKey());
+}
+
+function formatForeignerRemaining(expiresAt) {
+    if (!expiresAt) return "Expired";
+    const ms = expiresAt - Date.now();
+    if (ms <= 0) return "Expired";
+    const hours = Math.floor(ms / (60 * 60 * 1000));
+    const mins = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+    if (hours > 0) return `${hours}h ${mins}m left`;
+    return `${mins}m left`;
+}
+
+function updateForeignerKeyBanner() {
+    const countdown = document.getElementById("foreignerKeyCountdown");
+    const changeBtn = document.getElementById("foreignerChangeKeyBtn");
+    const statusPill = document.getElementById("foreignerKeyStatusPill");
+    const statusDot = document.querySelector(".foreigner-status-dot");
+    const stored = getStoredForeignerKey();
+    if (countdown) {
+        countdown.textContent = stored
+            ? `Key active · ${formatForeignerRemaining(stored.expiresAt)}`
+            : "Key required · 1-day access";
+    }
+    if (statusDot) {
+        statusDot.style.background = stored ? "#34d399" : "#38bdf8";
+        statusDot.style.boxShadow = stored ? "0 0 10px #34d399" : "0 0 8px #38bdf8";
+    }
+    if (changeBtn) {
+        const span = changeBtn.querySelector("span");
+        if (span) span.textContent = stored ? "Change Key" : "Enter Key";
+    }
+}
+
+function openForeignerKeyModal() {
+    const errorEl = document.getElementById("foreignerKeyError");
+    const inputEl = document.getElementById("foreignerKeyInput");
+    if (errorEl) {
+        errorEl.hidden = true;
+        errorEl.textContent = "";
+    }
+    if (inputEl) {
+        inputEl.value = "";
+    }
+    openModal("foreignerKeyModal");
+    window.setTimeout(() => inputEl?.focus(), 150);
+}
 
 function formatMaintenanceTime(value) {
     const date = new Date(value);
@@ -328,8 +412,8 @@ async function readCompressionQuota({ quiet = false } = {}) {
 }
 
 async function reserveCompressionUse() {
-    if (LOCAL_STANDALONE_MODE) {
-        return { unlimited: true, planId: "local" };
+    if (LOCAL_STANDALONE_MODE || (activePrimaryView === "foreigner" && isForeignerKeyActive())) {
+        return { unlimited: true, planId: "foreigner" };
     }
 
     const response = await fetch("/api/compression/quota", {
@@ -1112,6 +1196,10 @@ async function initializeMembership() {
         }
     });
     document.getElementById("patchAccessHint")?.addEventListener("click", () => {
+        if (activePrimaryView === "foreigner") {
+            openForeignerKeyModal();
+            return;
+        }
         if (NO_LOGIN_ALERT_MODE) {
             showNoPlanAlert();
             return;
@@ -1542,20 +1630,29 @@ function initializeTikTokVideoChecker() {
 }
 
 function setPrimaryAppView(view) {
+    const isForeigner = view === "foreigner";
     const historyOnly = view === "history";
     const checkOnly = view === "check";
-    const compressorOnly = !historyOnly && !checkOnly;
-    activePrimaryView = compressorOnly ? "compressor" : view;
+    const studioOnly = isForeigner || (!historyOnly && !checkOnly);
+    activePrimaryView = isForeigner ? "foreigner" : studioOnly ? "compressor" : view;
+
+    const foreignerBanner = document.getElementById("foreignerBanner");
+    if (foreignerBanner) {
+        foreignerBanner.hidden = !isForeigner;
+        if (isForeigner) {
+            updateForeignerKeyBanner();
+        }
+    }
 
     // History and Check are dedicated views. Compressor controls are restored
-    // only when the Compress navigation item is selected.
+    // when either Patch or Foreigner is selected.
     if (dropZone) {
-        dropZone.hidden = !compressorOnly;
-        dropZone.setAttribute("aria-hidden", String(!compressorOnly));
+        dropZone.hidden = !studioOnly;
+        dropZone.setAttribute("aria-hidden", String(!studioOnly));
     }
     if (queueAndActionsWrapper) {
-        queueAndActionsWrapper.hidden = !compressorOnly;
-        queueAndActionsWrapper.setAttribute("aria-hidden", String(!compressorOnly));
+        queueAndActionsWrapper.hidden = !studioOnly;
+        queueAndActionsWrapper.setAttribute("aria-hidden", String(!studioOnly));
     }
     renderSelectedVideoQuality();
 
@@ -1570,11 +1667,104 @@ function setPrimaryAppView(view) {
         ? "check"
         : historyOnly
           ? "history"
-          : "compress";
+          : isForeigner
+            ? "foreigner"
+            : "compress";
+
+    updatePatchButton();
+}
+
+function initializeForeignerKeyModal() {
+    const form = document.getElementById("foreignerKeyForm");
+    const input = document.getElementById("foreignerKeyInput");
+    const pasteBtn = document.getElementById("foreignerKeyPasteBtn");
+    const errorEl = document.getElementById("foreignerKeyError");
+    const changeKeyBtn = document.getElementById("foreignerChangeKeyBtn");
+    const modal = document.getElementById("foreignerKeyModal");
+
+    pasteBtn?.addEventListener("click", async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text && input) {
+                input.value = text.trim().toUpperCase();
+                input.focus();
+            }
+        } catch {
+            input?.focus();
+        }
+    });
+
+    changeKeyBtn?.addEventListener("click", () => {
+        openForeignerKeyModal();
+    });
+
+    form?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const rawKey = input?.value?.trim()?.toUpperCase() || "";
+        if (!rawKey) {
+            if (errorEl) {
+                errorEl.textContent = "Please enter an access key.";
+                errorEl.hidden = false;
+            }
+            return;
+        }
+
+        const submitBtn = document.getElementById("submitForeignerKeyBtn");
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.setAttribute("aria-busy", "true");
+        }
+        if (errorEl) {
+            errorEl.hidden = true;
+        }
+
+        try {
+            const response = await fetch("/api/foreigner/verify-key", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ key: rawKey }),
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.ok) {
+                const msg = data.error || "The key is invalid or has expired.";
+                if (errorEl) {
+                    errorEl.textContent = msg;
+                    errorEl.hidden = false;
+                }
+                return;
+            }
+
+            // Valid key!
+            storeForeignerKey(data.key, data.expiresAt);
+            closeModal("foreignerKeyModal");
+            setPrimaryAppView("foreigner");
+            setActiveNavigation("foreigner");
+            focusNavigationSection(dropZone);
+            logMessage("Foreigner access key verified. Unlocked for 24 hours.", "success");
+        } catch (error) {
+            if (errorEl) {
+                errorEl.textContent = error.message || "Network error. Please try again.";
+                errorEl.hidden = false;
+            }
+        } finally {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.removeAttribute("aria-busy");
+            }
+        }
+    });
+
+    modal?.addEventListener("click", (event) => {
+        if (event.target === modal) {
+            closeModal("foreignerKeyModal");
+        }
+    });
 }
 
 function initializeBottomNavigation() {
     const compressButton = document.getElementById("navCompressBtn");
+    const foreignerButton = document.getElementById("navForeignerBtn");
     const historyButton = document.getElementById("navHistoryBtn");
     const checkButton = document.getElementById("navCheckBtn");
     const tutorialButton = document.getElementById("navTutorialBtn");
@@ -1586,6 +1776,15 @@ function initializeBottomNavigation() {
         setPrimaryAppView("compress");
         setActiveNavigation("compress");
         focusNavigationSection(dropZone);
+    });
+
+    foreignerButton?.addEventListener("click", () => {
+        setPrimaryAppView("foreigner");
+        setActiveNavigation("foreigner");
+        focusNavigationSection(dropZone);
+        if (!isForeignerKeyActive()) {
+            openForeignerKeyModal();
+        }
     });
 
     historyButton?.addEventListener("click", async () => {
@@ -1729,10 +1928,10 @@ async function initializeApp() {
     renderHistoryList();
     initializeTikTokVideoChecker();
     initializeTikTokPosting();
+    initializeForeignerKeyModal();
     initializeBottomNavigation();
     adjustMobileLayout();
     window.addEventListener("resize", adjustMobileLayout);
-
 }
 
 function logMessage(text, type = "info") {
@@ -2920,7 +3119,14 @@ function renderFileList() {
 }
 
 async function addFiles(fileList) {
-    if (!requireLogin()) return;
+    if (activePrimaryView === "foreigner") {
+        if (!isForeignerKeyActive()) {
+            openForeignerKeyModal();
+            return;
+        }
+    } else {
+        if (!requireLogin()) return;
+    }
     if (processingFiles || currentFlowState === "patching") return;
     processingFiles = true;
     try {
@@ -3025,6 +3231,82 @@ function setPatchButtonIcon(iconClass) {
 function updatePatchButton() {
     const label = patchBtn.querySelector("span");
     const hint = document.getElementById("patchAccessHint");
+
+    // In Foreigner mode, access is governed by the 1-day access key
+    if (activePrimaryView === "foreigner") {
+        if (!isForeignerKeyActive()) {
+            patchBtn.disabled = false;
+            patchBtn.dataset.accessState = "foreigner-key-required";
+            setPatchButtonIcon("ri-key-2-line");
+            patchBtn.title = "Foreigner Access Key Required";
+            if (label) label.textContent = "Enter Access Key";
+            if (hint) {
+                hint.hidden = false;
+                hint.textContent = "Foreigner Access Key Required (1-day access) — click to enter key.";
+                hint.dataset.action = "foreigner-key";
+                hint.setAttribute("aria-expanded", "false");
+            }
+            return;
+        }
+
+        patchBtn.dataset.accessState = "active";
+        setPatchButtonIcon("ri-file-reduce-line");
+        patchBtn.removeAttribute("title");
+        if (hint) hint.hidden = true;
+
+        const failedCount = selectedFiles.filter(
+            (f) => f.status === "error",
+        ).length;
+        if (failedCount > 0) {
+            setPatchButtonIcon("ri-restart-line");
+            patchBtn.disabled = false;
+            const retryLabel =
+                failedCount > 1 ? `Retry Failed (${failedCount})` : "Retry Failed";
+            if (label) label.textContent = retryLabel;
+            return;
+        }
+
+        if (currentFlowState === "completed") {
+            const currentVfi = !!enableInterpolation?.checked;
+            const currentRes =
+                document.getElementById("outputResolution")?.value || "1080";
+            const settingsChanged =
+                currentVfi !== lastPatchedVfi || currentRes !== lastPatchedRes;
+
+            if (settingsChanged) {
+                setPatchButtonIcon("ri-refresh-line");
+                patchBtn.disabled = false;
+                if (label) label.textContent = "Repatch";
+            } else {
+                const checkedCount = selectedFiles.filter(
+                    (f) => f.status === "success" && f.checked && f.patchedBuffer,
+                ).length;
+                patchBtn.disabled = checkedCount === 0;
+                if (checkedCount === 0) patchBtn.dataset.accessState = "completed";
+                setPatchButtonIcon(checkedCount > 0 ? "ri-download-2-line" : "ri-check-double-line");
+                const dlLabel =
+                    checkedCount > 1
+                        ? `Download Selected (${checkedCount})`
+                        : checkedCount > 0
+                          ? "Download Selected"
+                          : "រួចរាល់";
+                if (label) label.textContent = dlLabel;
+            }
+        } else {
+            const pendingCount = selectedFiles.filter(
+                (f) => f.status === "pending",
+            ).length;
+            patchBtn.disabled =
+                pendingCount === 0 || currentFlowState === "patching";
+            setPatchButtonIcon(currentFlowState === "patching" ? "ri-loader-4-line" : "ri-file-reduce-line");
+            const patchLabel =
+                pendingCount > 1
+                    ? `Patch Videos (${pendingCount})`
+                    : "Patch Videos";
+            if (label) label.textContent = patchLabel;
+        }
+        return;
+    }
 
     if (NO_LOGIN_ALERT_MODE) {
         patchBtn.disabled = false;
@@ -3443,18 +3725,25 @@ document.addEventListener("visibilitychange", () => {
 });
 
 patchBtn.addEventListener("click", async () => {
-    if (NO_LOGIN_ALERT_MODE) {
-        showNoPlanAlert();
-        return;
-    }
-    if (!requireActiveSubscription()) return;
-    if (isFreeCompressionQuotaExhausted()) {
-        logMessage(
-            "FREE plan daily limit reached (3/3). It resets at midnight Cambodia time. PRO, PREMIUM, and MAX have unlimited patching.",
-            "warning",
-        );
-        updatePatchButton();
-        return;
+    if (activePrimaryView === "foreigner") {
+        if (!isForeignerKeyActive()) {
+            openForeignerKeyModal();
+            return;
+        }
+    } else {
+        if (NO_LOGIN_ALERT_MODE) {
+            showNoPlanAlert();
+            return;
+        }
+        if (!requireActiveSubscription()) return;
+        if (isFreeCompressionQuotaExhausted()) {
+            logMessage(
+                "FREE plan daily limit reached (3/3). It resets at midnight Cambodia time. PRO, PREMIUM, and MAX have unlimited patching.",
+                "warning",
+            );
+            updatePatchButton();
+            return;
+        }
     }
     const failedItems = selectedFiles.filter((f) => f.status === "error");
     if (failedItems.length > 0) {

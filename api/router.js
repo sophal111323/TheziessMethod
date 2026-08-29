@@ -8,6 +8,7 @@ import authTikTok from "../server/routes/auth/tiktok.js";
 import authTikTokCallback from "../server/routes/auth/tiktok/callback.js";
 import compressionQuota from "../server/routes/compression/quota.js";
 import dbStatus from "../server/routes/db-status.js";
+import foreignerVerifyKey from "../server/routes/foreigner/verify-key.js";
 import maintenanceStatus from "../server/routes/maintenance/status.js";
 import subscriptionActivateDemo from "../server/routes/subscription/activate-demo.js";
 import telegramHealth from "../server/routes/telegram/health.js";
@@ -30,6 +31,7 @@ const ROUTES = new Map([
     ["auth/tiktok", authTikTok],
     ["auth/tiktok/callback", authTikTokCallback],
     ["db-status", dbStatus],
+    ["foreigner/verify-key", foreignerVerifyKey],
     ["subscription/activate-demo", subscriptionActivateDemo],
     ["telegram/health", telegramHealth],
     ["telegram/setup", telegramSetup],
